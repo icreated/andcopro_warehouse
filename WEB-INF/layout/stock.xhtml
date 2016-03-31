@@ -1,0 +1,33 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+			xmlns:ui="http://java.sun.com/jsf/facelets"
+			xmlns:h="http://java.sun.com/jsf/html"
+			xmlns:p="http://primefaces.org/ui"
+			xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+			xmlns:pe="http://primefaces.org/ui/extensions"
+			xmlns:sec="http://www.springframework.org/security/tags"
+			xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+			xmlns:f="http://java.sun.com/jsf/core">
+
+
+			<h:form id="form">
+					<div id="topToolbar">
+						<p:commandButton value="Confirm movements" actionListener="#{stock.generate}" update="tabView" onstart="loadingBtn('mvtBtn', 'Processing...', true)" oncomplete="loadingBtn('mvtBtn', 'Confirm movements', false)" styleClass="validateBtn mvtBtn floatRight" icon="fa-stack-overflow" disabled="#{empty stock.lines}"/>
+					</div>
+
+					<p:messages id="messages" showDetail="true" autoUpdate="true" closable="true" />
+
+					<div id="stock" class="ContentBlock">
+							<p:tabView id="tabView">
+									<p:ajax event="tabChange" listener="#{stock.onTabChange}" update="form" onstart="$('.ui-tabs-panel').css('visibility', 'hidden')" oncomplete="$('.ui-tabs-panel').css('visibility', 'visible')"/>
+									<p:tab id="tabMovement" title="Movement">
+											<ui:include src="stockMvt.xhtml" />
+									</p:tab>
+									<p:tab id="tabInventory" title="Inventory">
+											<ui:include src="stockIvt.xhtml" />
+									</p:tab>
+							</p:tabView>
+					</div>
+
+		</h:form>
+
+</html>

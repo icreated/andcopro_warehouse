@@ -1,0 +1,76 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+			xmlns:h="http://java.sun.com/jsf/html"
+			xmlns:p="http://primefaces.org/ui"
+			xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+			xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+			xmlns:f="http://java.sun.com/jsf/core">
+
+
+
+			<div class="ui-datatable productTable">
+			<table>
+					<thead>
+							<tr>
+									<th><span class="ui-column-title">Product</span></th>
+									<th><span class="ui-column-title">From</span></th>
+									<th><span class="ui-column-title">mlocators</span></th>
+									<th><span class="ui-column-title">In stock</span></th>
+									<th><span class="ui-column-title">To</span></th>
+									<th><span class="ui-column-title"></span></th>
+							</tr>
+					</thead>
+					<tr>
+							<td>
+									<p:autoComplete id="mproduct" value="#{stock.product}" completeMethod="#{stock.completeProduct}" var="p" itemLabel="#{p.name}" itemValue="#{p}" converter="genericConverter" forceSelection="true">
+											<p:ajax event="itemSelect" listener="#{stock.onItemSelect}" update="mlocator,mlocators,mqtyonhand" />
+									</p:autoComplete>
+							</td>
+							<td>
+									<p:autoComplete id="mlocator" value="#{stock.locator}" completeMethod="#{stock.completeLocator}" var="l" itemLabel="#{l.name}" itemValue="#{l}" converter="genericConverter" forceSelection="true">
+											<p:ajax event="itemSelect" update="mlocators" />
+									</p:autoComplete>
+							</td>
+							<td>
+									<p:outputLabel for="mlocators" />
+									<p:selectOneMenu id="mlocators" value="#{stock.locator}" effectSpeed="fast" converter="genericConverter">
+											<p:ajax event="change" listener="#{stock.onItemSelect}" update="mlocator, mqtyonhand"/>
+											<f:selectItems value="#{stock.locators}" var="loc" itemLabel="#{loc.name}" itemValue="#{loc}" />
+									</p:selectOneMenu>
+							</td>
+							<td>
+									<h:outputText id="mqtyonhand" value="#{stock.qtyOnHand}">
+											<f:convertNumber pattern="0" />
+									</h:outputText>
+							</td>
+							<td>
+									<p:selectOneMenu id="mlocatorto" value="#{stock.locatorTo}" effectSpeed="fast" converter="genericConverter">
+											<p:ajax event="change" update="mlocator"/>
+											<f:selectItems value="#{stock.locators}" var="locto" itemLabel="#{locto.name}" itemValue="#{locto}" />
+									</p:selectOneMenu>
+							</td>
+							<td>
+									<p:commandButton value="Add to task list" styleClass="defaultBtn" icon="fa fa-plus-circle" actionListener="#{stock.add}" update="@form"/>
+							</td>
+					</tr>
+			</table>
+			</div>
+
+			<p:dataTable id="movementTable" var="line" value="#{stock.lines}">
+					<p:column>
+							<h:outputText value="#{line.product.name}" />
+					</p:column>
+					<p:column>
+							<h:outputText value="#{line.locator.name}" />
+					</p:column>
+					<p:column>
+							<h:outputText value="#{line.qtyOnHand}" />
+					</p:column>
+					<p:column>
+							<h:outputText value="#{line.locatorTo.name}" />
+					</p:column>
+					<p:column>
+					</p:column>
+			</p:dataTable>
+
+
+</html>

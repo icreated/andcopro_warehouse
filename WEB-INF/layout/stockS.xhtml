@@ -1,0 +1,147 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+			xmlns:ui="http://java.sun.com/jsf/facelets"
+			xmlns:h="http://java.sun.com/jsf/html"
+			xmlns:p="http://primefaces.org/ui"
+			xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+			xmlns:pe="http://primefaces.org/ui/extensions"
+			xmlns:sec="http://www.springframework.org/security/tags"
+			xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+			xmlns:f="http://java.sun.com/jsf/core">
+
+
+			<h:form id="form">
+				<div id="topToolbar">
+
+					<h:commandButton value="Validate" actionListener="#{stock.generate}" update="tabView" styleClass="validateBtn floatRight" icon="fa-calendar-check-o"/>
+				</div>
+
+
+		<p:messages id="messages" showDetail="true" autoUpdate="true" closable="true" />
+
+
+		<p:tabView id="tabView">
+				<p:ajax event="tabChange" listener="#{stock.onTabChange}" update="tabView" />
+		        <p:tab id="tabMovement" title="Movement">
+
+
+		    <h:panelGrid columns="2" cellpadding="5">
+		        <p:outputLabel value="Product:" for="mproduct" />
+        		<p:autoComplete id="mproduct" value="#{stock.product}" completeMethod="#{stock.completeProduct}"
+                        var="p" itemLabel="#{p.name}" itemValue="#{p}" converter="genericConverter"  forceSelection="true">
+                      <p:ajax event="itemSelect" listener="#{stock.onProductItemSelect}" update="mlocator,mqtyonhand" />
+                </p:autoComplete>
+
+		        <p:outputLabel value="Locator:" for="mlocator" />
+                <p:selectOneMenu id="mlocator" value="#{stock.locator}" converter="locatorConverter" styleClass="floatRight" effectSpeed="fast" style="width: 135px;" filter="true" filterMatchMode="startsWith">
+			          <p:ajax event="change" listener="#{stock.onLocatorItemSelect}" update="mqtyonhand"/>
+			          <f:selectItem itemLabel="Select location" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+			          <f:selectItems value="#{stock.locators}" var="loc" itemLabel="#{loc.busy ? '--': ''}#{loc.name}" itemValue="#{loc}"/>
+			     </p:selectOneMenu>
+
+		        <p:outputLabel value="Locator To:" for="mlocatorTo" />
+            <p:selectOneMenu id="mlocatorTo" value="#{stock.locatorTo}" converter="locatorConverter" styleClass="floatRight" effectSpeed="fast" style="width: 135px;" filter="true" filterMatchMode="startsWith">
+					<p:ajax event="change" />
+					<f:selectItem itemLabel="Select location" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+					<f:selectItems value="#{stock.locatorsTo}" var="tloc" itemLabel="#{tloc.busy ? '--': ''}#{tloc.name}" itemValue="#{tloc}"/>
+			     </p:selectOneMenu>
+
+
+ 				<p:outputLabel value="Qty Stock" for="mqtyonhand" />
+				<h:outputText id="mqtyonhand" value="#{stock.qtyOnHand}">
+				 	<f:convertNumber pattern="0" />
+				</h:outputText>
+
+
+
+			</h:panelGrid>
+			<p:commandButton value="ok" actionListener="#{stock.add}" update="tabMovement"/>
+
+
+
+
+
+				   <p:dataTable id="movementTable" var="line" value="#{stock.lines}">
+				       <p:column headerText="Product">
+				       		<h:outputText value="#{line.product.name}" />
+				       </p:column>
+				       <p:column headerText="Locator">
+				       		<h:outputText value="#{line.locator.name}" />
+				       </p:column>
+				       <p:column headerText="QtyOnHand">
+				       		<h:outputText value="#{line.qtyOnHand}" />
+				       </p:column>
+				       <p:column headerText="LocatorTo">
+				       		<h:outputText value="#{line.locatorTo.name}" />
+				       </p:column>
+
+					</p:dataTable>
+		        </p:tab>
+
+				<p:tab id="tabInventory" title="Inventory">
+
+					<h:panelGrid columns="2" cellpadding="5">
+				        <p:outputLabel value="Product:" for="iproduct" />
+		        		<p:autoComplete id="iproduct" value="#{stock.product}" completeMethod="#{stock.completeProduct}"
+		                        var="p" itemLabel="#{p.name}" itemValue="#{p}" converter="genericConverter"  forceSelection="true">
+		                      <p:ajax event="itemSelect" listener="#{stock.onProductItemSelect}" update="ilocator, iqtyonhand" />
+		                </p:autoComplete>
+
+
+				        <p:outputLabel value="Locator:" for="ilocator" />
+		                <p:selectOneMenu id="ilocator" value="#{stock.locator}" converter="locatorConverter" styleClass="floatRight" effectSpeed="fast" style="width: 135px;" filter="true" filterMatchMode="startsWith">
+					          <p:ajax event="change" listener="#{stock.onLocatorItemSelect}" update="iqtyonhand"/>
+					          <f:selectItem itemLabel="Select location" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+					          <f:selectItems value="#{stock.locators}" var="loc" itemLabel="#{loc.busy ? '--': ''}#{loc.name}" itemValue="#{loc}"/>
+					     </p:selectOneMenu>
+
+		 				<p:outputLabel value="Qty Stock" for="iqtyonhand" />
+						<h:outputText id="iqtyonhand" value="#{stock.qtyOnHand}">
+						 	<f:convertNumber pattern="0" />
+						</h:outputText>
+
+		 				<p:outputLabel value="Qty" for="iqty" />
+						<p:spinner id="iqty" value="#{stock.qty}" stepFactor="1" />
+
+						<p:outputLabel value="Charge" for="icharge" />
+						<p:selectOneMenu id="icharge" value="#{stock.charge}" converter="genericConverter" effectSpeed="fast">
+								<p:ajax event="change" />
+								<f:selectItem itemLabel="Select charge" itemValue="" noSelectionOption="true" itemDisabled="true"/>
+								<f:selectItems value="#{common.getTableList('C_Charge', 'C_ChargeType_ID=1000000')}" var="po" itemLabel="#{po.name}" itemValue="#{po}" />
+						</p:selectOneMenu>
+					</h:panelGrid>
+
+					<p:commandButton value="ok" actionListener="#{stock.add}" update="form"/>
+
+
+
+				   <p:dataTable id="inventoryTable" var="line" value="#{stock.lines}">
+				       <p:column headerText="Product">
+				       		<h:outputText value="#{line.product.name}" />
+				       </p:column>
+				       <p:column headerText="Locator">
+				       		<h:outputText value="#{line.locator.name}" />
+				       </p:column>
+				       <p:column headerText="QtyOnHand">
+							<h:outputText value="#{line.qtyOnHand}" >
+							    <f:convertNumber pattern="0" />
+							</h:outputText>
+				       </p:column>
+				       <p:column headerText="Qty">
+							<h:outputText value="#{line.qty}" >
+							    <f:convertNumber pattern="0" />
+							</h:outputText>
+				       </p:column>
+				       <p:column headerText="Charge">
+			       			<h:outputText value="#{line.charge.name}" />
+				       </p:column>
+
+					</p:dataTable>
+		        </p:tab>
+		    </p:tabView>
+
+
+
+		</h:form>
+
+
+</html>

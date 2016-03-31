@@ -1,0 +1,58 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+xmlns:ui="http://java.sun.com/jsf/facelets"
+xmlns:h="http://java.sun.com/jsf/html"
+xmlns:p="http://primefaces.org/ui"
+xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+xmlns:pe="http://primefaces.org/ui/extensions"
+xmlns:sec="http://www.springframework.org/security/tags"
+xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+xmlns:f="http://java.sun.com/jsf/core">
+
+
+<h:form styleClass="floatLeft width100pct">
+
+		<div id="topToolbar">
+				<p:outputLabel value="Warehouse" for="iwarehouse" />
+				<p:selectOneMenu id="iwarehouse" value="#{preference.warehouse}" converter="userConverter" effectSpeed="fast">
+						<p:ajax event="change"/>
+						<f:selectItem itemLabel="Select" itemValue="" noSelectionOption="true" itemDisabled="true"/>
+						<f:selectItems value="#{preference.warehouseList}" var="u" itemLabel="#{u.name}" itemValue="#{u}" />
+				</p:selectOneMenu>
+
+				<div class="hspace"/>
+
+				<p:outputLabel value="Purchasing" for="ipurchasing" />
+				<p:selectOneMenu id="ipurchasing" value="#{preference.purchasing}" converter="userConverter" effectSpeed="fast">
+						<p:ajax event="change"/>
+						<f:selectItem itemLabel="Select" itemValue="" noSelectionOption="true" itemDisabled="true"/>
+						<f:selectItems value="#{preference.purchasingList}" var="up" itemLabel="#{up.name}" itemValue="#{up}" />
+				</p:selectOneMenu>
+
+				<div class="hspace"/>
+
+				<p:outputLabel value="Accounting" for="iaccounting" />
+				<p:selectOneMenu id="iaccounting" value="#{preference.accounting}" converter="userConverter" effectSpeed="fast">
+						<p:ajax event="change"/>
+						<f:selectItem itemLabel="Select" itemValue="" noSelectionOption="true" itemDisabled="true"/>
+						<f:selectItems value="#{preference.accountingList}" var="ua" itemLabel="#{ua.name}" itemValue="#{ua}" />
+				</p:selectOneMenu>
+
+				<div class="hspace"/>
+
+				<p:outputLabel value="Scheduler" for="ischeduler" />
+				<p:selectOneMenu id="ischeduler" value="#{preference.scheduler}" converter="userConverter" effectSpeed="fast">
+						<p:ajax event="change"/>
+						<f:selectItem itemLabel="Select" itemValue="" noSelectionOption="true" itemDisabled="true"/>
+						<f:selectItems value="#{preference.schedulerList}" var="us" itemLabel="#{us.name}" itemValue="#{us}" />
+				</p:selectOneMenu>
+
+				<div class="hspace"/>
+
+				<p:commandButton icon="fa-floppy-o" value="Save changes" actionListener="#{preference.save}" onstart="loadingBtn('prefBtn', 'Saving changes...', true)" oncomplete="loadingBtn('prefBtn', 'Save changes', false)" styleClass="validateBtn prefBtn floatRight" />
+		</div>
+
+		<p:messages id="messages" showDetail="true" autoUpdate="true" closable="true" />
+
+</h:form>
+
+</html>

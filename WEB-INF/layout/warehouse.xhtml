@@ -1,0 +1,33 @@
+<html   xmlns="http://www.w3.org/1999/xhtml"
+		xmlns:ui="http://java.sun.com/jsf/facelets"
+		xmlns:h="http://java.sun.com/jsf/html"
+		xmlns:p="http://primefaces.org/ui"
+		xmlns:sec="http://www.springframework.org/security/tags"
+		xmlns:f="http://java.sun.com/jsf/core">
+		
+		
+		
+		<h:form id="warehouseTable">
+             <p:dataTable id="orderLines" value="#{warehouse.orders}" var="line"
+             selection="#{warehouse.orders}" rowKey="#{line.orderId}">
+                	<p:column selectionMode="multiple" style="width:16px;text-align:center" />
+                    <p:column headerText="Locator #">
+                        <h:outputText value="#{line.locator}" />
+                    </p:column>
+                    <p:column headerText="Purchase Order #">
+                        <h:outputText value="#{line.poDocumentNo}" />
+                    </p:column>                    
+                    <p:column headerText="Name">
+						<h:outputText value="#{line.bpName}" />
+                    </p:column>
+                    <p:column headerText="Actions">
+						<p:selectOneListbox value="#{reception.locators}" var="locator">
+							<p:outputLabel value="#{locator.name}"/>
+						</p:selectOneListbox>
+					    <p:commandLink value="Change locator"  onclick="#{warehouse.applyLocator(locator)}"  /> 
+                    </p:column>
+
+               </p:dataTable>
+		</h:form>
+		
+</html>

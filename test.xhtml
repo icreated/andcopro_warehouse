@@ -1,0 +1,148 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://java.sun.com/jsf/core">
+
+
+<h:head></h:head>
+      <h:form id="form" styleClass="floatLeft">
+         <p:outputLabel for="vendor" styleClass="selectOneLabel" value="Vendor"/>
+         <p:selectOneMenu id="vendor" value="#{reception.selectedVendor}" effectSpeed="fast">
+             <p:ajax event="change" update="PF('eventDialog').show()" />
+             <f:selectItem itemLabel="Select vendor" itemValue="" noSelectionOption="true" />
+             <f:selectItems value="#{reception.vendors}" var="vendor" itemLabel="#{vendor.name}" itemValue="#{vendor}" />
+         </p:selectOneMenu>
+
+
+         <p:dialog widgetVar="eventDialog" id="eventDialog" header="Event Details" showEffect="clip" hideEffect="clip">
+             <h:panelGrid id="eventDetails" columns="1">
+                 <p:outputLabel for="title" value="Titles:" />
+                 <p:commandButton type="reset" value="Reset" />
+             </h:panelGrid>
+         </p:dialog>
+      </h:form>
+
+
+
+            <h:form id="mainForm">
+              <p:panelGrid columns="2">
+                <h:outputLabel for="name" value="Please enter your name" />
+                <p:inputText id="name" size="30" value="#{helloWorld.name}" required="true"/>
+                <p:commandButton value="Press me" action="#{helloWorld.send}"/>
+                <h:messages showDetail="true" showSummary="false"/>
+              </p:panelGrid>
+            </h:form>
+
+
+
+                <h:form>
+                <p:dataTable value="#{basket.lines}" var="line" id="basketTable">
+                    <f:facet name="noData">
+                        #{msg.basketTableResultNull}
+                    </f:facet>
+
+                    <p:column>
+                        <f:facet name="header">
+                            <h:panelGroup>
+                                #{msg.productTableRefLabel}
+                            </h:panelGroup>
+                        </f:facet>
+                        #{line.name}
+
+
+
+
+
+                    </p:column>
+
+                    <p:column>
+                        <f:facet name="header">
+                            <h:panelGroup>
+                                #{msg.productTableDescriptionLabel}
+                            </h:panelGroup>
+                        </f:facet>
+                        #{line.description}
+                    </p:column>
+
+                    <p:column>
+                        <f:facet name="header">
+                            <h:panelGroup>
+                                <span title="#{msg.productTableStockHint}">#{msg.productTableStockLabel}</span>
+                            </h:panelGroup>
+                        </f:facet>
+                        #{dconverter.getQtyOnHand(webStore.m_Warehouse_ID, line.priceListProduct.id)}
+                    </p:column>
+
+                    <p:column>
+                        <f:facet name="header">
+                            <h:panelGroup>
+                                #{msg.productTableQuantityLabel}
+                            </h:panelGroup>
+                        </f:facet>
+                        <p:outputPanel>
+                         <p:spinner value="#{line.quantity}" size="3" min="1" max="1000">
+                         	<p:ajax  process="@parent" update="@(.myClass)"/>
+                         </p:spinner>
+
+
+	                            </p:outputPanel>
+                    </p:column>
+
+                    <p:column>
+                        <f:facet name="header">
+                            <h:panelGroup>
+                                <span title="#{msg.orderTableUnitPriceHint}">#{msg.orderTableUnitPriceLabel}</span>
+                            </h:panelGroup>
+                        </f:facet>
+                        <h:outputText value="#{line.price}">
+                            <f:convertNumber type="currency" groupingUsed="true"  currencySymbol="" maxFractionDigits="2"/>
+                        </h:outputText>
+                    </p:column>
+
+                    <p:column>
+                        <f:facet name="header">
+                            <h:panelGroup>
+                                <span title="#{msg.orderTableTotalPriceHint}">#{msg.orderTableTotalPriceLabel}</span>
+                            </h:panelGroup>
+                        </f:facet>
+                        <p:outputPanel id="felipe">
+                            <h:outputText id="qtyLineTotal" value="#{line.total}" >
+                                <f:convertNumber type="currency" groupingUsed="true" currencySymbol="" maxFractionDigits="2"/>
+                            </h:outputText>
+                        </p:outputPanel>
+                    </p:column>
+
+                    <p:column>
+                        <f:facet name="header">
+                            <h:panelGroup>
+                            </h:panelGroup>
+                        </f:facet>
+                        <h:commandLink action="#{product.deleteLine(line.line)}" value="Supprimer">
+                            <f:param name="basketMenuID" value="1" />
+                        </h:commandLink>
+                    </p:column>
+                 </p:dataTable>
+
+
+                 <table>
+                    <tr>
+                        <td>
+                            <h:outputText  value="#{msg.ordersTableTotalLabel}:" />
+                            <b>
+                 	            <h:outputText id="bTotal" styleClass="myClass" value="#{basket.total}" style="float: right !important; line-height: 18px;">
+	                                <f:convertNumber type="currency" groupingUsed="true"  currencySymbol="#{msg.currencySymbol}" maxFractionDigits="2"/>
+	                            </h:outputText>
+                            </b>
+                        </td>
+                        <td>
+                            <h:commandButton id="validBasket" value="#{msg.basketValidateBtn}" action="#{checkout.validateBasket}" rendered="#{basket.total gt 0}" style="float: right !important;">
+                                <f:param name="basketMenuID" value="2" />
+                                <f:param name="categoryMenuID" value="1000004" />
+                            </h:commandButton>
+                        </td>
+                    </tr>
+                </table>
+                </h:form>
+
+</html>

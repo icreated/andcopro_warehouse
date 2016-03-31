@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+  		xmlns:ui="http://java.sun.com/jsf/facelets"
+  		xmlns:h="http://java.sun.com/jsf/html"
+  		xmlns:p="http://primefaces.org/ui"
+  		xmlns:sec="http://www.springframework.org/security/tags"
+  		xmlns:f="http://java.sun.com/jsf/core">
+
+<f:event type="preRenderView" listener="#{common.checkAlreadyLoggedin}" />
+<f:view contentType="text/html" id="fview">
+
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title></title>
+		<ui:debug />
+		<f:metadata>
+			<ui:insert name="metadata" />
+		</f:metadata>
+
+		<h:head>
+        <link rel="icon" type="image/png" href="images/favicon.png" />
+        <link rel="stylesheet" href="fullcalendar.css"/>
+    		<script src="js/moment.min.js"></script>
+    		<script src="js/fullcalendar.js"></script>
+        <script src="js/chart.js"></script>
+        <link rel="stylesheet" type="text/css" href="font-awesome.css"/>
+        <link rel="stylesheet" type="text/css" href="main.css" />
+        <script src="js/jquery.ui.touch.js"></script>
+        <script src="js/main.js" type="text/javascript"></script>
+
+        <h:panelGroup rendered="#{sec:isAnyGranted('ROLE_USER')}">
+            <ui:include src="header.xhtml"/>
+        </h:panelGroup>
+        <!--
+        <p:layoutUnit position="west" id="west" resizable="false" header="#{msg['menu.title']}" style="height:580px; overflow:hidden;" size="225">
+        	<ui:include src="menu.xhtml" />
+        </p:layoutUnit>
+        -->
+        <!--
+				<p:messages autoUpdate="true" id="msgs" showDetail="true" showSummary="true" />
+				<ui:insert name="breadcrumb"/>
+        -->
+				<ui:insert name="content" />
+        <!--
+        <p:layoutUnit position="east" size="0" style="width:0px; display:none;" id="east">
+        </p:layoutUnit>
+        -->
+
+				<ui:include src="footer.xhtml" />
+
+		</h:head>
+
+    <h:body>
+        <div id="bubble"><span></span><div id="bubbleTip"/></div>
+    </h:body>
+
+</f:view>
+</html>

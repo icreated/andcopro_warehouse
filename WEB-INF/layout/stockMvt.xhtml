@@ -1,0 +1,73 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+			xmlns:h="http://java.sun.com/jsf/html"
+			xmlns:p="http://primefaces.org/ui"
+			xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+			xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+			xmlns:f="http://java.sun.com/jsf/core">
+
+
+
+			<div class="ui-datatable productTable inventoryTable addTable" style="padding: 10px 0 0 0;">
+			<table>
+					<thead>
+							<tr>
+									<th><span class="ui-column-title">Product</span></th>
+									<th class="txtRight"><span class="ui-column-title">In stock</span></th>
+									<th><span class="ui-column-title">From</span></th>
+									<th><span class="ui-column-title">To</span></th>
+									<th><span class="ui-column-title"></span></th>
+							</tr>
+					</thead>
+					<tr>
+							<td>
+									<p:autoComplete id="mproduct" value="#{stock.product}" styleClass="input100pct" completeMethod="#{stock.completeProduct}" var="p" itemLabel="#{p.name}" itemValue="#{p}" converter="genericConverter" forceSelection="true">
+											<p:ajax event="itemSelect" listener="#{stock.onProductItemSelect}" update="mlocator, mqtyonhand"/>
+									</p:autoComplete>
+							</td>
+							<td class="txtRight">
+									<p:outputLabel id="mqtyonhand" value="#{stock.qtyOnHand}" converter="javax.faces.Integer"/>
+							</td>
+							<td>
+									<p:selectOneMenu id="mlocator" value="#{stock.locator}" converter="locatorConverter" effectSpeed="fast" style="width: 135px;" filter="true" filterMatchMode="startsWith" disabled="#{empty stock.product}">
+											<p:ajax event="change" listener="#{stock.onLocatorItemSelect}" update="mqtyonhand, mlocatorTo"/>
+											<f:selectItem itemLabel="Select location" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+											<f:selectItems value="#{stock.locators}" var="loc" itemLabel="#{loc.busy ? '--': ''}#{loc.name}" itemValue="#{loc}"/>
+									</p:selectOneMenu>
+							</td>
+							<td>
+									<p:selectOneMenu id="mlocatorTo" value="#{stock.locatorTo}" converter="locatorConverter" effectSpeed="fast" style="width: 135px;" filter="true" filterMatchMode="startsWith" disabled="#{empty stock.locator}">
+											<p:ajax event="change" update="addMvt"/>
+											<f:selectItem itemLabel="Select location" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+											<f:selectItems value="#{stock.locatorsTo}" var="tloc" itemLabel="#{tloc.busy ? '--': ''}#{tloc.name}" itemValue="#{tloc}"/>
+									</p:selectOneMenu>
+							</td>
+							<td class="txtRight">
+									<p:commandButton id="addMvt" value="Add to task list" styleClass="defaultBtn" icon="fa fa-plus-circle" actionListener="#{stock.add}" update="form" disabled="#{empty stock.locatorTo}"/>
+							</td>
+					</tr>
+			</table>
+			</div>
+
+			<p:dataTable id="movementTable" styleClass="productTable inventoryTable noThead" rowStyleClass="miniBtnRow" style="padding: 0 0 10px 0; margin-top: -1px;" var="line" value="#{stock.lines}">
+					<p:column>
+							<p:outputLabel value="#{line.product.name}"/>
+					</p:column>
+					<p:column styleClass="txtRight">
+							<p:outputLabel value="#{line.qtyOnHand}" converter="javax.faces.Integer"/>
+					</p:column>
+					<p:column>
+							<p:outputLabel value="#{line.locator.name}"/>
+					</p:column>
+					<p:column>
+							<p:outputLabel value="#{line.locatorTo.name}"/>
+					</p:column>
+					<p:column styleClass="txtRight">
+							<span class="miniBtnSpan opacity10">
+									<!-- <p:commandButton styleClass="miniBtn dataBubble" icon="fa-trash" pt:data-bubble="Delete movement"/> -->
+									<p:commandButton styleClass="miniBtn dataBubble" icon="fa-print" pt:data-bubble="Print labels"/>
+							</span>
+					</p:column>
+			</p:dataTable>
+
+
+</html>

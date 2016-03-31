@@ -1,0 +1,304 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+			xmlns:ui="http://java.sun.com/jsf/facelets"
+			xmlns:h="http://java.sun.com/jsf/html"
+			xmlns:p="http://primefaces.org/ui"
+			xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+			xmlns:pe="http://primefaces.org/ui/extensions"
+			xmlns:sec="http://www.springframework.org/security/tags"
+			xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+			xmlns:f="http://java.sun.com/jsf/core">
+
+
+<h:form id="form" styleClass="floatLeft width100pct">
+				<div id="topToolbar">
+						<p:selectOneMenu id="resourceType" value="#{installation.selectedResourceTypeId}" effectSpeed="fast">
+								<p:ajax event="change" update="resource"/>
+								<f:selectItem itemLabel="Select resource type" itemValue="" noSelectionOption="true" itemDisabled="true"/>
+								<f:selectItems value="#{common.getTableList('S_ResourceType')}" var="po" itemLabel="#{po.name}" itemValue="#{po.s_ResourceType_ID}" />
+						</p:selectOneMenu>
+						<div class="hspace10"/>
+						<p:selectOneMenu id="resource" value="#{installation.selectedResourceId}" effectSpeed="fast" disabled="#{installation.selectedResourceTypeId eq 0}">
+								<p:ajax event="change" listener="#{installation.reloadCalendar()}"/>
+								<f:selectItem itemLabel="Select resource" itemValue="" noSelectionOption="true" itemDisabled="true"/>
+								<f:selectItems value="#{common.getTableList('S_Resource', 'S_ResourceType_ID='.concat(installation.selectedResourceTypeId))}" var="po" itemLabel="#{po.name}" itemValue="#{po.s_Resource_ID}" />
+						</p:selectOneMenu>
+
+						<div class="hspace10"/>
+
+						<p:commandButton value="Confirm schedule" actionListener="#{installation.generate}" update="tabView" onstart="loadingBtn('scheduleBtn', 'Processing...', true)" oncomplete="loadingBtn('scheduleBtn', activeTabName, false)" onsuccess="initDraggable()" styleClass="validateBtn scheduleBtn floatRight" icon="fa-calendar-check-o"/>
+				</div>
+
+
+		    <p:messages id="messagess" showDetail="true" autoUpdate="true" closable="true" />
+
+				<input type="hidden" id="hidden"/>
+
+
+<!--
+<pe:timeline id="timeline" value="#{groupingTimelineController.model}" var="order" varGroup="group"
+     editable="true" eventMargin="5" eventMarginAxis="0"
+     groupsChangeable="true" groupsOnRight="false" stackEvents="false"
+     showMajorLabels="false" axisOnTop="true"
+     timeZone="America/New_York" widgetVar="timelineWdgt">
+		<p:ajax event="changed" update="@none" listener="#{groupingTimelineController.onChange}"/>
+		<p:ajax event="delete" update="@none" listener="#{groupingTimelineController.onDelete}"/>
+		<p:ajax event="add" update="@none" onstart="PF('timelineWdgt').cancelAdd()"/>
+
+		<f:facet name="group">
+				<h:graphicImage value="#{group.imagePath}" style="vertical-align:middle;" alt="Truck"/>
+				<h:outputText value="Truck #{group.text}" style="font-weight:bold;"/>
+		</f:facet>
+
+		<h:graphicImage value="#{order.imagePath}" rendered="#{not empty order.imagePath}" style="display:inline; vertical-align:middle;" alt="Order"/>
+		<h:outputText value="Order #{order.number}"/>
+</pe:timeline>
+-->
+
+
+				<div id="scheduler" class="ContentBlock invisible opacityNull">
+						<div id="calendar"></div>
+				</div>
+
+				<div id="calendarTrash" class="ContentBlock invisible opacityNull" style="overflow: auto;">
+						<p:tabView id="tabView" onTabShow="changeConfirmBtn(index);">
+								<p:ajax event="tabChange" listener="#{installation.onTabChange}" onstart="$('.eventList').css('visibility', 'hidden')" oncomplete="initDraggable()" update="externalEvents, redos, measures, thirdParty, recap"/>
+								<p:tab title="Installs">
+										<p:commandButton value="Refresh jobs" actionListener="#{installation.initTab}" update="externalEvents" onstart="loadingBtn('refreshJobs', 'Refreshing...', true)" oncomplete="loadingBtn('refreshJobs', 'Refresh jobs', false); initDraggable()" onsuccess="initDraggable()" styleClass="defaultBtn refreshJobs floatRight" icon="fa fa-refresh"/>
+										<p:remoteCommand name="rc" update="@(.scheduledDates), @(.scheduledNb)" actionListener="#{installation.reloadLines}"/>
+										<p:dataList id="externalEvents" styleClass="eventList" value="#{installation.lines}" var="line" type="unordered" itemStyleClass="#{not empty line.scheduleList ? 'scheduled' : ''} eventRow eventDrag #{line.summary} #{line.inStock}">
+												<ui:include src="installsTab.xhtml" />
+										</p:dataList>
+				        </p:tab>
+								<!-- TAB RE-DO's -->
+								<p:tab title="Re-Do's">
+										<p:commandButton value="Refresh jobs" actionListener="#{installation.initTab}" update="redos" onstart="loadingBtn('refreshJobs', 'Refreshing...', true)" oncomplete="loadingBtn('refreshJobs', 'Refresh jobs', false); initDraggable()" onsuccess="initDraggable()" styleClass="defaultBtn refreshJobs floatRight" icon="fa fa-refresh"/>
+										<p:dataList id="redos" styleClass="eventList" value="#{installation.lines}" var="line" type="unordered" itemStyleClass="#{not empty line.scheduleList ? 'scheduled' : ''} eventRow eventDrag #{line.summary} #{line.inStock}">
+												<ui:include src="installsTab.xhtml" />
+										</p:dataList>
+				        </p:tab>
+								<!-- TAB MEASURES -->
+				        <p:tab title="Measures">
+										<p:commandButton value="Refresh jobs" actionListener="#{installation.initTab}" update="measures" onstart="loadingBtn('refreshJobs', 'Refreshing...', true)" oncomplete="loadingBtn('refreshJobs', 'Refresh jobs', false); initDraggable()" onsuccess="initDraggable()" styleClass="defaultBtn refreshJobs floatRight" icon="fa fa-refresh"/>
+										<p:dataList id="measures" styleClass="eventList measures" value="#{installation.lines}" var="line" type="unordered" itemStyleClass="#{not empty line.scheduleList ? 'scheduled' : ''} eventRow eventDrag measures">
+												<ui:include src="installsTabMeasures.xhtml" />
+										</p:dataList>
+				        </p:tab>
+								<!-- TAB THIRD PARTY -->
+								<p:tab title="Third party">
+										<p:commandButton value="Refresh jobs" actionListener="#{installation.initTab}" update="thirdParty" onstart="loadingBtn('refreshJobs', 'Refreshing...', true)" oncomplete="loadingBtn('refreshJobs', 'Refresh jobs', false); initDraggable()" onsuccess="initDraggable()" styleClass="defaultBtn refreshJobs floatRight" icon="fa fa-refresh"/>
+										<p:dataList id="thirdParty" styleClass="eventList" value="#{installation.lines}" var="line" type="unordered" itemStyleClass="#{not empty line.scheduleList ? 'scheduled' : ''} eventRow eventDrag #{line.summary} #{line.inStock}">
+												<ui:include src="installsTab.xhtml" />
+										</p:dataList>
+				        </p:tab>
+								<!-- TAB RECAP -->
+								<p:tab title="Recap">
+										<p:commandButton value="Refresh jobs" actionListener="#{installation.initTab}" update="recap" onstart="loadingBtn('refreshJobs', 'Refreshing...', true)" oncomplete="loadingBtn('refreshJobs', 'Refresh jobs', false); initDraggable()" onsuccess="initDraggable()" styleClass="defaultBtn refreshJobs floatRight" icon="fa fa-refresh"/>
+										<p:dataList id="recap" styleClass="eventList recap" value="#{installation.lines}" var="line" type="unordered" itemStyleClass="#{not empty line.scheduleList ? 'scheduled' : ''} eventRow miniBtnRow #{line.summary} #{line.inStock}">
+												<f:facet name="header">
+														<ul class="eventList recap">
+																<li class="thead">
+																		<h:outputText styleClass="column" value="&#160;&#160;&#160;"/>
+																		<h:outputText styleClass="column" value="&#160;&#160;&#160;"/>
+																		<h:outputText styleClass="column" value="&#160;&#160;&#160;SO # (Req.)"/>
+																		<h:outputText styleClass="column" value="&#160;&#160;&#160;Side mark"/>
+																		<h:outputText styleClass="column" value="&#160;&#160;&#160;Installer"/>
+																		<h:outputText styleClass="column" value="&#160;&#160;&#160;Date"/>
+																		<h:outputText styleClass="column" value="&#160;&#160;&#160;Status"/>
+																</li>
+														</ul>
+												</f:facet>
+												<h:panelGroup styleClass="column">
+														<p:selectBooleanCheckbox value="#{line.selected}" styleClass="eventCheckbox">
+																<p:ajax listener="#{installation.addToSelection(line)}"/>
+														</p:selectBooleanCheckbox>
+														<input type="hidden" name="orderId" class="orderId" value="#{line.orderId}"/>
+												</h:panelGroup>
+												<h:panelGroup styleClass="column status #{line.statusName}">
+												    <i class="fa fa-circle status"></i>
+												</h:panelGroup>
+												<h:panelGroup styleClass="column">
+														&#160;&#160;&#160;<h:outputText styleClass="bpName" value="#{line.orderDocumentNo} (#{line.reqDocumentNo})"/>
+												</h:panelGroup>
+												<h:panelGroup styleClass="column">
+												    &#160;&#160;&#160;<h:outputText value="#{line.poReference}"/>
+												</h:panelGroup>
+												<h:panelGroup styleClass="column">
+														&#160;&#160;&#160;<h:outputText styleClass="bpName" value="#{line.name}"/>
+												</h:panelGroup>
+												<h:panelGroup styleClass="column">
+														&#160;&#160;&#160;
+														<ui:param name="fromTo" value="#{line.dateFrom} to #{line.dateTo}" />
+														<h:outputText styleClass="phone" value="#{line.dateTo eq line.dateFrom ? line.dateFrom : fromTo}"/>
+												</h:panelGroup>
+												<h:panelGroup styleClass="column">
+														&#160;&#160;&#160;<h:outputText styleClass="statusName" value="#{line.statusName}"/>
+												</h:panelGroup>
+												<h:panelGroup styleClass="column txtAlignRight">
+														&#160;&#160;&#160;
+														<span class="miniBtnSpan opacity10" style="margin-right: 16px;">
+																<p:commandButton icon="fa-trash" actionListener="#{installation.voidInstallation(line)}" update="recap" pt:data-bubble="Cancel installation" styleClass="miniBtn dataBubble" rendered="#{line.statusName eq 'Install Scheduled'}"/>
+																<p:commandButton icon="fa-print" oncomplete="window.open('document?type=shipment&amp;id=#{line.shipmentId}')" pt:data-bubble="Print documents" styleClass="miniBtn viewPDF dataBubble" />
+																<p:commandButton icon="fa-repeat" actionListener="#{installation.redoInstallation(line)}" update="recap" pt:data-bubble="Re-do installation" styleClass="miniBtn dataBubble" rendered="#{line.statusName eq 'Installation'}"/>
+														</span>
+												</h:panelGroup>
+										</p:dataList>
+				        </p:tab>
+				    </p:tabView>
+				</div>
+
+				<p:dialog styleClass="orderDetail" header="&#160;&#160;&#160;" widgetVar="lineDialog" modal="true" draggable="false" resizable="false" onShow="popupPosition(-13, -21)">
+				    <p:outputPanel id="lineDialog">
+								<ul class="eventList">
+										<li class="thead">
+												<h:outputText styleClass="column" value="&#160;&#160;&#160;Product"/>
+												<h:outputText styleClass="column txtAlignRight" value="&#160;&#160;&#160;Ordered"/>
+												<h:outputText styleClass="column txtAlignRight" value="&#160;&#160;&#160;In stock"/>
+										</li>
+								</ul>
+							 <p:dataList styleClass="eventList" value="#{installation.orderLines}" var="line" type="unordered" itemStyleClass="eventRow">
+				           <h:panelGroup styleClass="column">
+									 		<h:outputText value="&#160;&#160;&#160;"/>
+											<h:outputText value="#{line.name}" rendered="#{not empty line.name}"/>
+											<h:outputText value=" - ##{line.windowNumber}" rendered="#{not empty line.windowNumber}"/>
+											<h:outputText value=", #{line.floorPlan}" rendered="#{not empty line.floorPlan}"/>
+											<h:outputText value=", width: " rendered="#{not empty line.width}"/><h:outputText value="#{line.width}" styleClass="shutterSize" rendered="#{not empty line.width}"/>
+											<h:outputText value=", length: " rendered="#{not empty line.length}"/><h:outputText value="#{line.length}" styleClass="shutterSize" rendered="#{not empty line.length}"/>
+									 </h:panelGroup>
+				           <h:outputText styleClass="column txtAlignRight" value="#{line.qtyOrdered}"/>
+				           <h:outputText styleClass="column txtAlignRight" converter="javax.faces.Integer" value="#{line.qtyOnHand}"/>
+				       </p:dataList>
+				   </p:outputPanel>
+				</p:dialog>
+
+				<p:dialog id="report" widgetVar="report" >
+		        <p:media value="/document?type=shipment&amp;id=#{installation.selectedId}" width="400px" height="700px" player="pdf"/>
+		    </p:dialog>
+</h:form>
+
+
+
+		<!-- gmap -->
+		<div class="ContentBlock mapDiv invisible opacityNull">
+				<div id="gmap" style="height: 800px; clear: both;"></div>
+		</div>
+
+		<script>
+			var phoenix = {lat: 33.467480, lng: -112.076299};
+			var directionsService;
+			var directionsDisplay;
+			var map;
+			function initMap() {
+					directionsService = new google.maps.DirectionsService;
+					directionsDisplay = new google.maps.DirectionsRenderer({suppressMarkers:true});
+					map = new google.maps.Map(document.getElementById('gmap'), {
+							zoom: 10,
+							center: phoenix,
+							zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER },
+							streetViewControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER },
+							scrollwheel: false,
+							scaleControl: true
+					});
+					var trafficLayer = new google.maps.TrafficLayer();
+					trafficLayer.setMap(map);
+					directionsDisplay.setMap(map);
+
+					var routeControlDiv = document.createElement('div');
+					var routeControl = new RouteControl(routeControlDiv, map);
+					routeControlDiv.index = 1;
+					map.controls[google.maps.ControlPosition.TOP_CENTER].push(routeControlDiv);
+
+					// Create the DIV to hold the control and call the CenterControl() constructor
+					var centerControlDiv = document.createElement('div');
+					var centerControl = new CenterControl(centerControlDiv, map);
+					centerControlDiv.index = 1;
+					map.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
+
+			}
+
+			// Calculate and display route on map
+			function calculateAndDisplayRoute(directionsService, directionsDisplay, origin, destination, wp, wpInfoWindow) {
+					directionsService.route({
+							origin: origin.location,
+							destination: destination.location,
+							waypoints: wp,
+							optimizeWaypoints: true,
+							travelMode: google.maps.TravelMode.DRIVING
+					}, function(response, status) {
+							if (status === google.maps.DirectionsStatus.OK) {
+									directionsDisplay.setDirections(response);
+							} else {
+									//window.alert('Directions request failed due to ' + status);
+							}
+					});
+
+					// Create custom markers
+					var zindex = 999;
+					var wpMarker = [];
+					wpMarker.push(origin);
+					for(i in wp) wpMarker.push({location: wp[i].location, title: wpInfoWindow[i].title, phone: wpInfoWindow[i].phone});
+					wpMarker.push(destination);
+
+					for(i in wpMarker) {
+							var geocoder = new google.maps.Geocoder();
+							(function(i) {	//closure
+									geocoder.geocode({'address': wpMarker[i].location}, function(results, status) {
+											if (status === google.maps.GeocoderStatus.OK) {
+													var label = parseInt(i)+1;
+													var marker = new google.maps.Marker({
+											        map: map,
+											        position: results[0].geometry.location,
+															zIndex: zindex++,
+															label: label.toString()
+										      });
+													var infowindow = new google.maps.InfoWindow({
+															content: wpMarker[i].title + "<br/>" + wpMarker[i].location + "<br/>Phone: " + wpMarker[i].phone
+													});
+													marker.addListener('click', function() {
+															infowindow.open(map, marker);
+															marker.setZIndex(zindex++);
+															infowindow.setZIndex(zindex);
+												  });
+									    }
+									});
+						  })(i);	//closure
+					}
+			}
+
+			// Construct the "Recenter on Phoenix" and "Calculate Route" buttons
+			function RouteControl(controlDiv, map) {
+					var controlUI = document.createElement('div');
+					controlUI.className = 'customMapTopBtn routeBtn';
+					controlDiv.appendChild(controlUI);
+					var controlText = document.createElement('div');
+					controlText.className = 'customMapLbl';
+					controlText.innerHTML = '<i class="fa fa-location-arrow"></i>Calculate route';
+					controlUI.appendChild(controlText);
+
+					// Setup the click event listeners: simply set the map to Phoenix.
+					controlUI.addEventListener('click', function() {
+							getCurrentEvents();
+					});
+			}
+			function CenterControl(controlDiv, map) {
+					var controlUI = document.createElement('div');
+					controlUI.className = 'customMapTopBtn';
+					controlDiv.appendChild(controlUI);
+					var controlText = document.createElement('div');
+					controlText.className = 'customMapLbl';
+					controlText.innerHTML = '<i class="fa fa-dot-circle-o"></i>Recenter on Phoenix';
+					controlUI.appendChild(controlText);
+
+					// Setup the click event listeners: simply set the map to Phoenix.
+					controlUI.addEventListener('click', function() {
+							map.setCenter(phoenix);
+							map.setZoom(10);
+					});
+			}
+
+		</script>
+		<script src="https://maps.googleapis.com/maps/api/js?callback=initMap&amp;key=AIzaSyAaoBBivzHfLgL68WXZUtF2Rlhc8d8RuFI&amp;signed_in=true" async="true" defer="true"></script>
+		<!-- key=AIzaSyAaoBBivzHfLgL68WXZUtF2Rlhc8d8RuFI&amp;
+					AIzaSyBeWe4X5cmlwmG_BU4YGAQnI5rX_1tWllA&amp;
+				-->
+
+</html>

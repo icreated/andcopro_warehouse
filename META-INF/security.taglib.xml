@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE facelet-taglib PUBLIC
+  "-//Sun Microsystems, Inc.//DTD Facelet Taglib 1.0//EN"
+  "http://java.sun.com/dtd/facelet-taglib_1_0.dtd">
+<facelet-taglib>
+
+	<namespace>http://www.springframework.org/security/tags</namespace>
+
+        <function>
+                <function-name>isNotGranted</function-name>
+                <function-class>com.andcopro.util.SecurityUtil</function-class>
+                <function-signature>
+        			boolean isNotGranted(java.lang.String) {
+                </function-signature>
+        </function>
+
+        <function>
+                <function-name>isAllGranted</function-name>
+                <function-class>com.andcopro.util.SecurityUtil</function-class>
+                <function-signature>
+        			boolean isAllGranted(java.lang.String) {
+                </function-signature>
+        </function>
+
+        <function>
+                <function-name>isAnyGranted</function-name>
+                <function-class>com.andcopro.util.SecurityUtil</function-class>
+                <function-signature>
+        			boolean isAnyGranted(java.lang.String) {
+                </function-signature>
+        </function>
+
+</facelet-taglib>

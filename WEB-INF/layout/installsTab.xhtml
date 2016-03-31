@@ -1,0 +1,71 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+			xmlns:h="http://java.sun.com/jsf/html"
+			xmlns:p="http://primefaces.org/ui"
+			xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+			xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+			xmlns:f="http://java.sun.com/jsf/core">
+
+
+
+		<f:facet name="header">
+		    <ul class="eventList">
+		        <li class="thead">
+		            <h:outputText styleClass="column" value="&#160;&#160;&#160;"/>
+		            <h:outputText styleClass="column" value="&#160;&#160;&#160;"/>
+		            <h:outputText styleClass="column" value="&#160;&#160;&#160;"/>
+		            <h:outputText styleClass="column" value="&#160;&#160;&#160;PO - SO (Req.)"/>
+								<h:outputText styleClass="column" value="&#160;&#160;&#160;Side mark"/>
+		            <h:outputText styleClass="column" value="&#160;&#160;&#160;Customer"/>
+		            <h:outputText styleClass="column" value="&#160;&#160;&#160;Phone #"/>
+		            <h:outputText styleClass="column" value="&#160;&#160;&#160;Location"/>
+		            <h:outputText styleClass="column" value="&#160;&#160;&#160;Request status"/>
+		        </li>
+		    </ul>
+		</f:facet>
+
+		<ul class="fa-ul handle column">
+		    <li><i class="fa fa-circle"></i></li>
+		    <li><i class="fa fa-circle"></i></li>
+		    <li><i class="fa fa-circle"></i></li>
+		</ul>
+		<h:panelGroup styleClass="column">
+		    <p:selectBooleanCheckbox value="#{line.selected}" styleClass="eventCheckbox dataBubble" pt:data-bubble="No job scheduled for this order anymore">
+		        <p:ajax listener="#{installation.addToSelection(line)}"/>
+		    </p:selectBooleanCheckbox>
+		    <h:outputText value="#{fn:length(line.scheduleList)}" id="scheduledNb" styleClass="scheduledNb"/>
+		    <p:dataList value="#{line.scheduleList}" var="scheduleLine" id="scheduledDates" styleClass="scheduledDates">
+		        <f:facet name="header">Scheduled</f:facet>
+		        <h:outputText value="#{scheduleLine.date}" style="text-transform: capitalize;">
+								<f:convertDateTime pattern="MMM d" />
+					 	</h:outputText>
+						<h:outputText value=", #{scheduleLine.name}"/>
+		    </p:dataList>
+		    <input type="hidden" name="orderId" class="orderId" value="#{line.orderId}"/>
+		</h:panelGroup>
+		<h:panelGroup styleClass="column status #{line.summary} #{line.inStock}">
+		    <i class="fa fa-circle status"></i>
+		</h:panelGroup>
+		<h:panelGroup styleClass="column">
+		    &#160;&#160;&#160;<h:outputText value="#{line.poDocumentNo} - "/>
+				<p:commandLink value="#{line.orderDocumentNo}" action="#{installation.initOrderLines(line.shipmentId)}" pt:data-bubble="View detail" update=":form:lineDialog" oncomplete="PF('lineDialog').show();" styleClass="documentNo dataBubble" />
+				&#160;(<h:outputText styleClass="reqDocumentNo" value="#{line.reqDocumentNo}"/>)
+		</h:panelGroup>
+		<h:panelGroup styleClass="column">
+		    &#160;&#160;&#160;<h:outputText value="#{line.poReference}"/>
+		</h:panelGroup>
+		<h:panelGroup styleClass="column">
+		    &#160;&#160;&#160;<h:outputText styleClass="bpName" value="#{line.bpName}"/>
+		</h:panelGroup>
+		<h:panelGroup styleClass="column">
+		    &#160;&#160;&#160;<h:outputText styleClass="phone" value="#{line.phone}"/>
+		</h:panelGroup>
+		<h:panelGroup styleClass="column">
+		    &#160;&#160;&#160;<h:outputText styleClass="city dataBubble" value="#{line.city}" pt:data-bubble="#{line.address1}"/>
+				<h:outputText styleClass="address displayNone" value="#{line.address}"/>
+		</h:panelGroup>
+		<h:panelGroup styleClass="column">
+		    &#160;&#160;&#160;<h:outputText styleClass="summary" value="#{line.summary}"/>
+		</h:panelGroup>
+
+
+</html>

@@ -1,0 +1,102 @@
+
+<html  xmlns="http://www.w3.org/1999/xhtml"
+       xmlns:ui="http://java.sun.com/jsf/facelets"
+       xmlns:h="http://java.sun.com/jsf/html"
+       xmlns:p="http://primefaces.org/ui"
+       xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+       xmlns:c="http://java.sun.com/jstl/core"
+       xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+       xmlns:f="http://java.sun.com/jsf/core">
+
+
+<h:form styleClass="floatLeft width100pct">
+
+		<div id="topToolbar">
+      	<!-- <p:outputLabel for="warehouse" styleClass="selectOneLabel" value="Warehouse"/> -->
+      	<p:selectOneMenu id="warehouse" value="#{reception.selectedWarehouseId}" effectSpeed="fast">
+      			<p:ajax event="change" update="vendor, order" />
+      			<f:selectItem itemLabel="Select warehouse" itemValue="" noSelectionOption="true" itemDisabled="true"/>
+      			<f:selectItems value="#{reception.warehouses}" var="warehouse" itemLabel="#{warehouse.name}" itemValue="#{warehouse.key}" />
+      	</p:selectOneMenu>
+      	<div class="hspace10"/>
+      	<p:selectOneMenu id="vendor" value="#{reception.selectedVendor}" converter="bpartnerConverter" effectSpeed="fast" disabled="#{empty reception.vendors}" filter="true" filterMatchMode="startsWith">
+      		 <p:ajax event="change" update="productTable, order" />
+      		 <f:selectItem itemLabel="Select vendor" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+      		 <f:selectItems value="#{reception.vendors}" var="vendor" itemLabel="#{vendor.name}" itemValue="#{vendor}" />
+      	</p:selectOneMenu>
+      	<div class="hspace10"/>
+      	<p:selectOneMenu id="order" value="#{reception.selectedOrder}" converter="orderConverter" effectSpeed="fast" disabled="#{empty reception.orders or empty reception.vendors}">
+      		 <p:ajax event="change" update="productTable, locator, inDispute, validateReception, inDisputeLbl" />
+      		 <f:selectItem itemLabel="Select PO (Side mark)" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+      		 <f:selectItems value="#{reception.orders}" var="order" itemLabel="#{order.documentNo} (#{empty common.getSideMark(order.c_Order_ID) ? 'n/a' : common.getSideMark(order.c_Order_ID)})" itemValue="#{order}" />
+      	</p:selectOneMenu>
+        <div class="hspace10"/>
+        <div class="floatLeft inDisputeDiv">
+            <p:selectBooleanCheckbox id="inDispute" value="#{reception.inDispute}" styleClass="inDispute" disabled="#{empty reception.orders}">
+                <p:ajax update="productTable" />
+            </p:selectBooleanCheckbox>
+            <p:outputLabel id="inDisputeLbl" for="inDispute" styleClass="#{empty reception.orders ? 'lblDisabled' : ''}" value="In dispute"/>
+        </div>
+        <p:commandButton id="validateReception" value="Confirm reception" styleClass="validateBtn receptionBtn floatRight" icon="fa-check-circle" update="order, inDisputeLbl, productTable" actionListener="#{reception.createReception}" onstart="loadingBtn('receptionBtn', 'Processing...', true)" oncomplete="loadingBtn('receptionBtn', 'Confirm reception', false)" disabled="#{fn:length(reception.selectedItems) == 0}"/>
+        <div class="hspace10 floatRight"/>
+        <!--
+        <p:selectOneMenu id="assignTo" value="#{reception.selectedRequestUserId}" styleClass="floatRight" effectSpeed="fast" disabled="#{empty reception.orders}">
+            <p:ajax event="change" update="productTable, locator, inDispute"/>
+            <f:selectItem itemLabel="Assign to" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+            <f:selectItems value="#{common.getTableList('AD_User_Roles','AD_Role_ID=1000014')}" var="po" itemLabel="#{common.getPOById('AD_User',po.getAD_User_ID()).name}" itemValue="#{po.getAD_User_ID()}" />
+        </p:selectOneMenu>
+        <div class="hspace10 floatRight"/>
+        <p:commandButton id="printLabels" value="Print labels" styleClass="defaultBtn floatRight" icon="fa-print" disabled="#{empty reception.orders}"/>
+        <div class="hspace10 floatRight"/>
+        -->
+        <p:selectOneMenu id="locator" value="#{reception.selectedLocatorId}" styleClass="floatRight" effectSpeed="fast" disabled="#{empty reception.orders}" style="width: 135px;" filter="true" filterMatchMode="startsWith">
+            <p:ajax event="change" update="productTable"/>
+            <f:selectItem itemLabel="Select location" itemValue="#{null}" noSelectionOption="true" itemDisabled="true"/>
+            <f:selectItems value="#{reception.freeLocators}" var="loc" itemLabel="#{loc.busy ? '--': ''}#{loc.name}" itemValue="#{loc.id}"/>
+        </p:selectOneMenu>
+		</div>
+
+
+    <p:messages id="messages" showDetail="true" autoUpdate="true" closable="true" />
+
+
+		<p:dataTable styleClass="productTable ContentBlock" id="productTable" value="#{reception.lines}" var="line" selection="#{reception.selectedItems}" rowSelectMode="checkbox" rowKey="#{line.orderLine.key}" emptyMessage="Please select a warehouse, a vendor and a PO above &lt;i class='fa fa-reply fa-rotate-90' style='font-size: 9px; color: #333; position: absolute; margin: 2px 0 0 3px;'&gt;&lt;/i&gt;">
+				<p:ajax event="toggleSelect" update="productTable, @(.validateBtn)"/>
+        <p:ajax event="rowSelectCheckbox" update="@(.validateBtn)" />
+        <p:ajax event="rowUnselectCheckbox" update="@(.validateBtn)" />
+        <p:column headerText="SKU">
+						<p:outputLabel value="#{line.product.name}" />
+				</p:column>
+				<p:column headerText="Description" styleClass="maxWidthCol">
+            <p:outputLabel value="#{line.description}"/>
+            <!-- <p:outputLabel value="#{line.selected}"/> -->
+				</p:column>
+				<p:column headerText="Expected qty" styleClass="txtRight">
+            <p:outputLabel converter="javax.faces.Integer" value="#{line.qty}"/>
+				</p:column>
+				<p:column headerText="Received qty" styleClass="txtRight">
+						<p:inputText converter="javax.faces.Integer" value="#{line.qty}" maxlength="5" size="5" styleClass="txtRight" rendered="#{!line.charge}"/>
+				</p:column>
+				<p:column headerText="Location">
+				    <p:inputText value="#{line.locator}" size="11" rendered="#{!line.charge}"/>
+				</p:column>
+				<p:column headerText="Box qty" styleClass="txtRight">
+						<p:inputText value="#{line.qtyBox}" maxlength="2" size="3" styleClass="txtRight" rendered="#{!line.charge}"/>
+				</p:column>
+        <p:column headerText="In dispute">
+            <p:selectOneMenu value="#{line.textDispute}" effectSpeed="fast" disabled="#{not reception.inDispute}" rendered="#{!line.charge}">
+               <p:ajax event="change"/>
+               <f:selectItem itemLabel="Select reason" itemValue="#{null}" noSelectionOption="true"/>
+          		 <f:selectItems value="#{common.getReferenceList(1000008)}" var="reason" itemLabel="#{reason.name}" itemValue="#{reason.value}"/>
+          	</p:selectOneMenu>
+        </p:column>
+        <p:column headerText="Label">
+            <span class="miniBtnSpan">
+                <p:commandButton icon="fa-print" pt:data-bubble="Print documents" styleClass="miniBtn dataBubble" style="height: 32px;"/>
+            </span>
+        </p:column>
+				<p:column selectionMode="multiple" styleClass="txtRight lastCol"/>
+		</p:dataTable>
+
+</h:form>
+</html>
