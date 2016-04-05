@@ -33,6 +33,7 @@ import org.compiere.model.MStorageOnHand;
 import org.compiere.model.MStore;
 import org.compiere.model.MUser;
 import org.compiere.model.Query;
+import org.compiere.process.DocAction;
 import org.compiere.process.ProcessInfo;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
@@ -84,9 +85,7 @@ public class InstallationService extends AService {
 			int C_Order_ID = DB.getSQLValue(null, "SELECT C_Order_ID FROM C_Order WHERE DocumentNo LIKE ?", po.getPOReference());
 			so = new MOrder(ctx, C_Order_ID, null);
 		}
-		System.out.println("SO="+so.getDocumentNo());
-		if (so == null)
-			return null;
+
 		
 		List<OrderLine> list = new ArrayList<OrderLine>();
 		MOrderLine soLine = null;
@@ -258,7 +257,7 @@ public class InstallationService extends AService {
 			"INNER JOIN S_ResourceAssignment ra ON o.C_Order_ID = ra.C_Order_ID  " +
 			"LEFT JOIN R_Request req ON req.R_Request_ID IN  " +
 			"(SELECT R_Request_ID FROM R_Request WHERE DocumentNo IN (SELECT substring(array_to_string(regexp_matches(raa.name, 'R#\\d+', 'gi'),''),3)  " +
-			"FROM S_ResourceAssignment raa WHERE raa.S_ResourceAssignment_ID = ra.S_ResourceAssignment_ID)) AND req.M_InOut_ID = io.M_InOut_ID " +
+			"FROM S_ResourceAssignment raa WHERE raa.S_ResourceAssignment_ID = ra.S_ResourceAssignment_ID)) AND req.M_InOutInstall_ID = io.M_InOut_ID " +
 			"INNER JOIN R_Status s ON req.R_Status_ID  = s.R_Status_ID   " +
 			"INNER JOIN S_Resource r ON ra.S_Resource_ID = r.S_Resource_ID   " +
 			"WHERE (io.DocStatus IN ('DR','IP') AND s.Name LIKE 'Install_Scheduled') OR (io.DocStatus IN ('CO') AND s.Name LIKE 'Installation')   " +
@@ -266,7 +265,6 @@ public class InstallationService extends AService {
 		
 
 		List<InstallBean> list = new ArrayList<InstallBean>();
-		Map<String, InstallBean> map = new HashMap<String, InstallBean>();
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 		try
@@ -296,47 +294,12 @@ public class InstallationService extends AService {
 		
 	}
 	
-/*	
-	public MRequest getRequestFromShipmentId(int M_InOut_ID) {
-		
-		
-		String sql = "SELECT req.* FROM M_InOut io " +
-				"INNER JOIN R_Request req ON req.R_Request_ID = io.R_Request_ID " +
-				"WHERE io.M_InOut_ID = ?";
-
-		MRequest req = null;
-		PreparedStatement pstmt = null;
-		ResultSet rs = null;
-		try
-		{
-			pstmt = DB.prepareStatement(sql, null);
-			pstmt.setInt(1, M_InOut_ID);
-			rs = pstmt.executeQuery();
-			if (rs.next())
-				req = new MRequest(ctx,rs, null);
-		}
-		catch (Exception e)
-		{
-			log.log(Level.SEVERE, sql, e);
-		}
-		finally
-		{
-			DB.close(rs, pstmt);
-			rs = null; pstmt = null;
-		}
-		return req;		
-		
-	}
-*/	
-	
 	
 	
 	public void voidInstallation(int M_InOut_ID, String trxName) {
 		
 		MInOut ship = new MInOut(ctx, M_InOut_ID, trxName);
-		ship.voidIt();
-		ship.setDocStatus(MInOut.DOCSTATUS_Voided);
-		ship.setDocAction(MInOut.DOCACTION_None);
+		ship.processIt(DocAction.ACTION_Void);
 		ship.save();
 	}
 	
@@ -375,7 +338,6 @@ public class InstallationService extends AService {
         sql.append(" ORDER BY ic.DocumentNo DESC");
         String sqlStr = String.format(sql.toString(), requestTypeName, statusName);
 
-        String style = null;
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 		List<InstallBean> list = new ArrayList<InstallBean>();
@@ -493,6 +455,32 @@ public class InstallationService extends AService {
 	}
 	
 	
+	public void updateRequests(int M_InOutInstall_ID, int SalesRep_ID, String statusName, String summary,  String trxName) {
+		
+		
+		Query query = new Query(Envs.getCtx(), MRequest.Table_Name, "M_InOutInstall_ID="+M_InOutInstall_ID, trxName);
+		List<MRequest> requests = query.list();
+		for (MRequest request : requests) {
+
+			Query statusQuery = new Query(ctx, MStatus.Table_Name, "Name LIKE ?",trxName);
+			statusQuery.setParameters(statusName);
+			MStatus status = statusQuery.first();
+			if (status == null)
+				continue;
+
+			request.getRequestType();
+			request.setSummary(summary);
+			request.setR_Status_ID(status.getR_Status_ID());
+			if (SalesRep_ID > 0)
+				request.setSalesRep_ID(SalesRep_ID);
+			request.save();			
+		}		
+		
+		
+	}
+	
+	
+	
 	public List<MUser> getUsersByRoleName(String roleName, String filter) {
 		
 	
@@ -534,17 +522,17 @@ public class InstallationService extends AService {
 	}
 	
 	
-	public int getPreferenceAttributeAsInt(String value) {
+	public int getPreferenceAttributeAsInt(String value, String trxName) {
 
 		  int id = 0;
-		  String userID = getPreferenceAttribute(value);
+		  String userID = getPreferenceAttribute(value, trxName);
 		  if (userID != null)
 			  id = Integer.parseInt(userID);
 		  return id;
 	}
 	
-	public String getPreferenceAttribute(String value) {
-    	Query query = new Query(Envs.getCtx(), MPreference.Table_Name, "AD_User_ID = ? AND Value LIKE ?", null);
+	public String getPreferenceAttribute(String value, String trxName) {
+    	Query query = new Query(Envs.getCtx(), MPreference.Table_Name, "AD_User_ID = ? AND Value LIKE ?", trxName);
     	query.setParameters(Envs.getUserCredential().getAD_User_ID(), Envs.getUserCredential().getAD_User_ID()+"_"+value);
     	MPreference pref = query.first();
     	if (pref != null)
@@ -554,12 +542,12 @@ public class InstallationService extends AService {
 	}
 	
 	
-	public void setPreferenceAttribute(String value, String attribute) {
-    	Query query = new Query(Envs.getCtx(), MPreference.Table_Name, "AD_User_ID = ? AND Value LIKE ?", null);
+	public void setPreferenceAttribute(String value, String attribute, String trxName) {
+    	Query query = new Query(Envs.getCtx(), MPreference.Table_Name, "AD_User_ID = ? AND Value LIKE ?", trxName);
     	query.setParameters(Envs.getUserCredential().getAD_User_ID(), Envs.getUserCredential().getAD_User_ID()+"_"+value);
     	MPreference pref = query.first();
     	if (pref == null) {
-    		pref = new MPreference(ctx, 0, null);
+    		pref = new MPreference(ctx, 0, trxName);
     		pref.setAD_User_ID(Envs.getUserCredential().getAD_User_ID());
     		pref.setValue(Envs.getUserCredential().getAD_User_ID()+"_"+value);
     	} 

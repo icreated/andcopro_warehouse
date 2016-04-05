@@ -130,7 +130,7 @@ public class Installation implements Serializable {
 		  } else if (!message.equals("0")) {
 			  
 			  message = "Installation : "+message;
-			  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_WAREHOUSE);
+			  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_WAREHOUSE, null);
 			  for(InstallBean order: selectedLines) {
 				  installationService.updateStatusRequest(order.getRequestId(), AD_User_ID, InstallationService.STATUS_INSTALL_SCHEDULED, 
 						  "Installation Scheduled - "+resource.getName(), null);
@@ -142,7 +142,7 @@ public class Installation implements Serializable {
 		  
 	  } else if (selectedTab.equals(TAB_REDO)) {
 		  
-		  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_WAREHOUSE);		  
+		  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_WAREHOUSE, null);		  
 		  for (InstallBean install : selectedLines) {
 			  installationService.updateStatusRequest(install.getRequestId(), AD_User_ID, InstallationService.STATUS_INSTALLATION, 
 					  "Installation - "+resource.getName(), null);
@@ -150,7 +150,7 @@ public class Installation implements Serializable {
 
 	  } else if (selectedTab.equals(TAB_MEASURES)) {
 		  
-		  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_PURCHASING);
+		  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_PURCHASING, null);
 		  for (InstallBean install : selectedLines) {
 			  installationService.updateStatusRequest(install.getRequestId(), AD_User_ID, InstallationService.STATUS_SCHEDULE_PO, 
 					  "Schedule PO - "+resource.getName(), null);
@@ -175,68 +175,50 @@ public class Installation implements Serializable {
 
 	  } else if (selectedTab.equals(TAB_RECAP)) {
 		  
-		  // Group by shipment Id & docStatus
-		  Map<String, List<InstallBean>> map = new HashMap<String, List<InstallBean>>();
-		  for(InstallBean install: selectedLines) {
-			  if (map.containsKey(install.getShipmentId()+"_"+install.getDocStatus())) {
-				  map.get(install.getShipmentId()).add(install);
-			  } else {
-				  List<InstallBean> list = new ArrayList<InstallBean>();
-				  list.add(install);
-				  map.put(install.getShipmentId()+"_"+install.getDocStatus(), list);
-			  }
-			 
+		  Map<Integer, String> map = new HashMap<Integer, String>();
+		  for(InstallBean install : selectedLines) {
+			  map.put(install.getShipmentId(), install.getDocStatus());
 		  }
 		  
-	
-		  for(Map.Entry<String,List<InstallBean>> entry: map.entrySet()) {
-			  
-			  int shipmentId = Integer.parseInt(entry.getKey().split("_")[0]);
-			  String docStatus = entry.getKey().split("_")[1];
-			  
+		  
+		  for( Map.Entry<Integer, String>install : map.entrySet()) {
 			  
 			  String trxName = Trx.createTrxName("Recap");	
 			  Trx trx = Trx.get(trxName, true);	//trx needs to be committed too
 			  
-			  MInOut ship = new MInOut(Envs.getCtx(), shipmentId, trxName);	
+			  MInOut ship = new MInOut(Envs.getCtx(), install.getKey(), trxName);	
 			  
-			  if (docStatus.equals(DocAction.STATUS_Drafted) || docStatus.equals(DocAction.STATUS_InProgress)) {
-				  
-				  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_SCHEDULING);
+			  if (install.getValue().equals(DocAction.STATUS_Drafted) || install.getValue().equals(DocAction.STATUS_InProgress)) {
 				  
 				  ship.setDocAction(DocAction.ACTION_Complete);
 				  ship.processIt(DocAction.ACTION_Complete);
+				  ship.saveEx();
 				  
-				  Query query = new Query(Envs.getCtx(), MRequest.Table_Name, "M_InOut_ID="+shipmentId, trxName);
-				  List<MRequest> requests = query.list();
-				  for (MRequest req : requests) {
-					  installationService.updateStatusRequest(req.getR_Request_ID(), AD_User_ID, InstallationService.STATUS_INSTALLATION, 
-						"Installation - "+resource.getName(), trxName);						
-				  }
+				  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_SCHEDULING, trxName);
+				  installationService.updateRequests(install.getKey(), AD_User_ID, InstallationService.STATUS_INSTALLATION, 
+							"Installation - "+resource.getName(), trxName);					  
 
-			  } else if (docStatus.equals(DocAction.STATUS_Completed)) {
-				  
-				  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_ACCOUNTING_RECEIVABLE);
+			  } else if (install.getValue().equals(DocAction.STATUS_Completed)) {
 				  
 				  ship.processIt(DocAction.ACTION_Close);
+				  ship.saveEx();
 				  
-				  Query query = new Query(Envs.getCtx(), MRequest.Table_Name, "M_InOut_ID="+shipmentId, trxName);
-				  List<MRequest> requests = query.list();
-				  for (MRequest req : requests) {
-					installationService.updateStatusRequest(req.getR_Request_ID(), AD_User_ID, InstallationService.STATUS_INSTALL_COMPLETE, 
-						"Install Complete - "+resource.getName(), trxName);					  
-				  }
+				  int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_ACCOUNTING_RECEIVABLE, trxName);
+				  installationService.updateRequests(install.getKey(), AD_User_ID, InstallationService.STATUS_INSTALL_COMPLETE, 
+							"Install Complete - "+resource.getName(), trxName);					  
 			  }
 			  
-			  ship.saveEx();
-			  if (!trx.commit()) {
+
+			   if (!trx.commit()) {
 				  	trx.rollback();
-					FacesUtil.addErrorMessage("Transaction is aborted # %s", ship.getDocumentNo());	
+					FacesUtil.addErrorMessage("Transaction is aborted #"+ship.getDocumentNo());	
 				}
 				trx.close();
-				trx = null;			  
+				trx = null;		
 
-		  }			  
+		  }
+		  
+	  
 			  
 
 	  }
@@ -262,10 +244,21 @@ public class Installation implements Serializable {
   public void redoInstallation(InstallBean install) {
 	  
 	  MResource resource = MResource.get(Envs.getCtx(), selectedResourceId);
-//	  MRequest req = installationService.getRequestFromShipmentId(install.getShipmentId());
-	  if (install.getRequestId() > 0)
-		  installationService.updateStatusRequest(install.getRequestId(), 0, InstallationService.STATUS_REDO, 
-				  "Redo - "+resource.getName(), null);	 
+	  
+	  String trxName = Trx.createTrxName("REDO");	
+	  Trx trx = Trx.get(trxName, true);
+
+	  installationService.updateRequests(install.getShipmentId(), 0, InstallationService.STATUS_REDO, 
+			  "Redo - "+resource.getName(), trxName);	  
+	  
+		if (trx.commit()) {
+			FacesUtil.addSuccessMessage("Installation %s has been redone", install.getShipDocumentNo());	
+		} else {
+			trx.rollback();
+			FacesUtil.addErrorMessage("Cannot redo installation # %s", install.getShipDocumentNo());	
+		}
+		trx.close();
+		trx = null; 
 	  
 	  lines = installationService.getRecapInstallation();
   }
@@ -278,16 +271,14 @@ public class Installation implements Serializable {
 		MResource resource = MResource.get(Envs.getCtx(), selectedResourceId);
 	  
 		String trxName = Trx.createTrxName("DEL_SHIP");	
-		Trx trx = Trx.get(trxName, true);	//trx needs to be committed too
+		Trx trx = Trx.get(trxName, true);
 	  
-		int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_SCHEDULING);
+		int AD_User_ID = installationService.getPreferenceAttributeAsInt(Envs.ROLE_SCHEDULING, trxName);
 		  
 		installationService.voidInstallation(install.getShipmentId(),trxName);	
 		
-//		MRequest req = installationService.getRequestFromShipmentId(install.getShipmentId());
-		if (install.getRequestId() > 0)
-			installationService.updateStatusRequest(install.getRequestId(), AD_User_ID, InstallationService.STATUS_ASSIGN_CREW, 
-					InstallationService.STATUS_ASSIGN_CREW+ " - "+resource.getName(), trxName);
+		installationService.updateRequests(install.getShipmentId(), AD_User_ID, InstallationService.STATUS_ASSIGN_CREW, 
+				InstallationService.STATUS_ASSIGN_CREW+ " - "+resource.getName(), trxName);	
 		
 		DB.executeUpdate("DELETE FROM S_ResourceAssignment WHERE S_ResourceAssignment_ID = ?", install.getEventId(), trxName);
 

@@ -46,19 +46,19 @@ public class Preference implements Serializable {
 	@PostConstruct
 	public void init() {
 		
-		String userID = installationService.getPreferenceAttribute(Envs.ROLE_WAREHOUSE);
+		String userID = installationService.getPreferenceAttribute(Envs.ROLE_WAREHOUSE, null);
 		if (userID != null)
 			warehouse = MUser.get(Envs.getCtx(), Integer.parseInt(userID));
 		
-		userID = installationService.getPreferenceAttribute(Envs.ROLE_SCHEDULING);
+		userID = installationService.getPreferenceAttribute(Envs.ROLE_SCHEDULING, null);
 		if (userID != null)
 			scheduler = MUser.get(Envs.getCtx(), Integer.parseInt(userID));
 		
-		userID = installationService.getPreferenceAttribute(Envs.ROLE_ACCOUNTING_RECEIVABLE);
+		userID = installationService.getPreferenceAttribute(Envs.ROLE_ACCOUNTING_RECEIVABLE, null);
 		if (userID != null)
 			accounting = MUser.get(Envs.getCtx(), Integer.parseInt(userID));
 		
-		userID = installationService.getPreferenceAttribute(Envs.ROLE_PURCHASING);
+		userID = installationService.getPreferenceAttribute(Envs.ROLE_PURCHASING, null);
 		if (userID != null)
 			purchasing = MUser.get(Envs.getCtx(), Integer.parseInt(userID));
 		
@@ -76,19 +76,19 @@ public class Preference implements Serializable {
 		StringBuffer msg = new StringBuffer();
 		
 		if (warehouse != null && warehouse.getAD_User_ID() > 0) {
-			installationService.setPreferenceAttribute(Envs.ROLE_WAREHOUSE,String.valueOf(warehouse.getAD_User_ID()));
+			installationService.setPreferenceAttribute(Envs.ROLE_WAREHOUSE,String.valueOf(warehouse.getAD_User_ID()), null);
 			msg.append("Warehouse:").append(warehouse.getName()).append(", ");
 		}	
 		if (purchasing != null && purchasing.getAD_User_ID() > 0) {
-			installationService.setPreferenceAttribute(Envs.ROLE_PURCHASING,String.valueOf(purchasing.getAD_User_ID()));
+			installationService.setPreferenceAttribute(Envs.ROLE_PURCHASING,String.valueOf(purchasing.getAD_User_ID()), null);
 			msg.append("Purchasing:").append(purchasing.getName()).append(", ");
 		}
 		if (accounting != null && accounting.getAD_User_ID() > 0) {
-			installationService.setPreferenceAttribute(Envs.ROLE_ACCOUNTING_RECEIVABLE,String.valueOf(accounting.getAD_User_ID()));
+			installationService.setPreferenceAttribute(Envs.ROLE_ACCOUNTING_RECEIVABLE,String.valueOf(accounting.getAD_User_ID()), null);
 			msg.append("Accounting:").append(accounting.getName()).append(", ");
 		}
 		if (scheduler != null && scheduler.getAD_User_ID() > 0) {
-			installationService.setPreferenceAttribute(Envs.ROLE_SCHEDULING,String.valueOf(scheduler.getAD_User_ID()));
+			installationService.setPreferenceAttribute(Envs.ROLE_SCHEDULING,String.valueOf(scheduler.getAD_User_ID()), null);
 			msg.append("Scheduler:").append(scheduler.getName()).append(", ");
 		}
 		

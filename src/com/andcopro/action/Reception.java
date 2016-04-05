@@ -144,14 +144,14 @@ public class Reception implements Serializable {
 		}
 		
 		
-		selectedRequestUserId = installationService.getPreferenceAttributeAsInt(Envs.ROLE_WAREHOUSE);
+		selectedRequestUserId = installationService.getPreferenceAttributeAsInt(Envs.ROLE_WAREHOUSE, null);
 				
 		if (selectedRequestUserId <=0) {
 			FacesUtil.addWarnMessage("Warehouse User is not defined. See preferences.");
 			return;			
 		}
 		
-		int accountingUserId = installationService.getPreferenceAttributeAsInt(Envs.ROLE_ACCOUNTING_RECEIVABLE);
+		int accountingUserId = installationService.getPreferenceAttributeAsInt(Envs.ROLE_ACCOUNTING_RECEIVABLE, null);
 		if (accountingUserId <=0) {
 			FacesUtil.addWarnMessage("Accounting User is not defined. See preferences.");
 			return;			
